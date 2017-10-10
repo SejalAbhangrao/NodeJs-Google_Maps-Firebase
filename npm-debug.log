@@ -296,4 +296,7 @@
 52 error   syscall: 'mkdir',
 52 error   path: '/home/sejal/Desktop/Sejal/node_modules/.staging' }
 53 error Please try running this command again as root/Administrator.
+
 54 verbose exit [ -13, true ]
+
+

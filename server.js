@@ -1,4 +1,4 @@
-// Include Server Dependencies
+// Include Server Dependencies.
 
 var express    = require('express');
 var app        = express();
