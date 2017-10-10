@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.5/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.5/angular-resource.min.js">
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.5/angular-route.min.js">
+    </script>
+
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.2.0/firebase-messaging.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY_HERE&libraries=places"
+      ></script>
+    <script src="app.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <!-- <script src="app.js" ></script> -->
+
+<!-- &callback=initMap -->
+    <title>Place Autocomplete</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+        width:80%;
+        float:left;
+      }
+
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #description {
+        font-family: Roboto;
+        font-size: 15px;
+        font-weight: 300;
+      }
+
+      #infowindow-content .title {
+        font-weight: bold;
+      }
+
+      #infowindow-content {
+        display: none;
+      }
+
+      #map #infowindow-content {
+        display: inline;
+      }
+
+      .pac-card {
+        margin: 10px 10px 0 0;
+        border-radius: 2px 0 0 2px;
+        box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        outline: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        background-color: #fff;
+        font-family: Roboto;
+      }
+
+      #pac-container {
+        padding-bottom: 12px;
+        margin-right: 12px;
+      }
+
+      .pac-controls {
+        display: inline-block;
+        padding: 5px 11px;
+      }
+
+      .pac-controls label {
+        font-family: Roboto;
+        font-size: 13px;
+        font-weight: 300;
+      }
+
+      #pac-input {
+        background-color: #fff;
+        font-family: Roboto;
+        font-size: 15px;
+        font-weight: 300;
+        margin-left: 12px;
+        padding: 0 11px 0 13px;
+        text-overflow: ellipsis;
+        width: 400px;
+      }
+
+
+
+      #pac-input:focus {
+        border-color: #4d90fe;
+      }
+
+      #btn {
+      width:25%;
+      background-color:dodgerblue;
+      color: #000;
+      border-radius: 5px;
+      box-shadow: 2px 2px 2px silver;
+      }
+
+      #btn1 {
+      width:15%;
+      background-color:dodgerblue;
+      color: #000;
+      border-radius: 5px;
+      box-shadow: 2px 2px 2px silver;
+      }
+
+      #title {
+        color: #fff;
+        background-color: #4d90fe;
+        font-size: 25px;
+        font-weight: 500;
+        padding: 6px 12px;
+      }
+
+     tr {
+       font-size: 15px;
+     }
+
+     tr:hover{
+       background-color: #EBEBEB;
+     }
+
+
+
+    </style>
+  </head>
+  <body onload="initMap()">
+    <div class="pac-card" id="pac-card">
+      <div>
+        <div id="title">
+          Autocomplete Search
+        </div>
+        <div id="type-selector" class="pac-controls">
+          <input type="radio" name="type" id="changetype-all" checked="checked">
+          <label for="changetype-all">All</label>
+
+          <input type="radio" name="type" id="changetype-establishment">
+          <label for="changetype-establishment">Establishments</label>
+
+          <input type="radio" name="type" id="changetype-address">
+          <label for="changetype-address">Addresses</label>
+
+          <input type="radio" name="type" id="changetype-geocode">
+          <label for="changetype-geocode">Geocodes</label>
+        </div>
+        <div id="strict-bounds-selector" class="pac-controls">
+          <input type="checkbox" id="use-strict-bounds" value="">
+          <label for="use-strict-bounds">Strict Bounds</label>
+        </div>
+      </div>
+      <div id="pac-container">
+        <input id="pac-input" type="text"
+            placeholder="Enter a location">
+      </div>
+
+      <div align="center">
+       <input type="button" id="btn" value="ADD" onclick="dispPlaces()"/>
+      </div>
+        </br>
+    </div>
+    <div id="map"></div>
+ <div id="infowindow-content">
+   <img src="" width="16" height="16" id="place-icon">
+   <span id="place-name"  class="title"></span><br>
+   <span id="place-address"></span>
+ </div>
+
+ <div id="tab">
+</br>
+ <div align="center">
+     <input type="button" id="btn1" value="RESET ORIGINAL ZOOM" onclick="zoomChanges()"/>
+      </br>
+      </br>
+  </div>
+  </div>
+  <script>
+    // This example requires the Places library. Include the libraries=places
+    // parameter when you first load the API. For example:
+    // <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places">
+
+
+//Fill in your details here. Following fields are found in your firebase account
+
+
+    var config = {
+       apiKey: "___",
+       authDomain: "___",
+       databaseURL: "____"
+     };
+
+
+      firebase.initializeApp(config);
+
+      var dbRef = firebase.database().ref("/");
+
+
+      var body = document.getElementById("tab")
+
+      // creates a <table> element and a <tbody> element
+      var tbl = document.createElement("table");
+      var tblBody = document.createElement("tbody");
+
+var name_value = null;
+var places = [];
+var positions = [];
+var fullAddress = [];
+var latitudeLongitude = [];
+var firebasedata = {
+ lat: null,
+ lng: null,
+ name: null,
+ full_address:null
+};
+
+
+
+function dispPlaces() {
+
+    dbRef.push({
+                    lat:positions[positions.length-1][0],
+                    lng:positions[positions.length-1][1],
+                    name:places[places.length-1],
+                    full_address:fullAddress[fullAddress.length-1]
+                  });
+
+    window.alert("Address added successfully");
+
+}
+
+function zoomChanges()
+{
+    map.setZoom(5);
+}
+
+
+var map = new google.maps.Map(document.getElementById('map'), {
+  center: {lat: 20.9734, lng: 79.6569},
+  zoom: 5,
+  mapTypeId: google.maps.MapTypeId.ROADMAP
+});
+
+  function initMap() {
+
+
+        dbRef.on("child_added", function(snapshot, prevChildKey) {
+         var newPosition = snapshot.val();
+         var latLng = new google.maps.LatLng(newPosition.lat,
+           newPosition.lng);
+         var details = newPosition.full_address;
+           var radioButton = document.createElement("INPUT"); //Added for checkbox
+           radioButton.type = "radio";
+           radioButton.name = "places"; //Added for checkbox
+           var row = document.createElement("tr");
+           var cell = document.createElement("td");
+           var cellText = document.createTextNode(newPosition.name);
+
+           cell.appendChild(cellText);
+           row.appendChild(radioButton);
+           row.appendChild(cell);
+
+           tblBody.appendChild(row);
+          tbl.appendChild(tblBody);
+
+          body.appendChild(tbl);
+
+
+
+         var marker = new google.maps.Marker({
+           position: latLng,
+           map: map,
+           title: details
+         });
+
+         var cityCircle = new google.maps.Circle({
+           strokeColor: '#FF0000',
+           strokeOpacity: 0.8,
+           strokeWeight: 2,
+           fillColor: '#FF0000',
+           fillOpacity: 0.35,
+           map: map,
+           center: latLng,
+           radius: 5000
+          });
+
+       });
+
+
+        var card = document.getElementById('pac-card');
+        var input = document.getElementById('pac-input');
+        var types = document.getElementById('type-selector');
+        var strictBounds = document.getElementById('strict-bounds-selector');
+
+        map.controls[google.maps.ControlPosition.TOP_RIGHT].push(card);
+
+        var autocomplete = new google.maps.places.Autocomplete(input);
+
+        // Bind the map's bounds (viewport) property to the autocomplete object,
+        // so that the autocomplete requests use the current map bounds for the
+        // bounds option in the request.
+        autocomplete.bindTo('bounds', map);
+
+        var infowindow = new google.maps.InfoWindow();
+        var infowindowContent = document.getElementById('infowindow-content');
+        infowindow.setContent(infowindowContent);
+        autocomplete.addListener('place_changed', function() {
+
+        infowindow.close();
+          //marker.setVisible(false);
+          var place = autocomplete.getPlace();
+
+          if (!place.geometry) {
+            // User entered the name of a Place that was not suggested and
+            // pressed the Enter key, or the Place Details request failed.
+            window.alert("No details available for input: '" + place.name + "'");
+            return;
+          }
+
+          // If the place has a geometry, then present it on a map.
+          if (place.geometry.viewport) {
+
+            map.fitBounds(place.geometry.viewport);
+          } else {
+            map.setCenter(place.geometry.location);
+            map.setZoom(3);  
+          }
+
+
+          var marker = new google.maps.Marker({
+               position: place.geometry.location,
+               map: map
+             });
+
+
+
+          positions.push([place.geometry.location.lat(),place.geometry.location.lng()]);
+
+          var address = '';
+          var fulladdress = '';
+          if (place.address_components) {
+            address = [
+              (place.address_components[0] && place.address_components[0].short_name || ''),
+              (place.address_components[1] && place.address_components[1].short_name || ''),
+              (place.address_components[2] && place.address_components[2].short_name || '')
+            ].join(' ');
+            places.push(address);
+
+            var i=0;
+            while(i< place.address_components.length) {
+                fulladdress += place.address_components[i].long_name;
+                fulladdress += " ";
+                i++;
+            }
+            fullAddress.push(fulladdress);
+          }
+        });
+
+
+        // Sets a listener on a radio button to change the filter type on Places
+        // Autocomplete.
+        function setupClickListener(id, types) {
+          var radioButton = document.getElementById(id);
+          radioButton.addEventListener('click', function() {
+            autocomplete.setTypes(types);
+          });
+        }
+
+        setupClickListener('changetype-all', []);
+        setupClickListener('changetype-address', ['address']);
+        setupClickListener('changetype-establishment', ['establishment']);
+        setupClickListener('changetype-geocode', ['geocode']);
+
+        document.getElementById('use-strict-bounds')
+            .addEventListener('click', function() {
+              console.log('Checkbox clicked! New state=' + this.checked);
+              autocomplete.setOptions({strictBounds: this.checked});
+            });
+
+
+       document.getElementById('tab')
+                .addEventListener('click', function() {
+
+        event = event || window.event; //for IE8 backward compatibility
+        var target = event.target || event.srcElement; //for IE8 backward compatibility
+        while (target && target.nodeName != 'TR') {
+            target = target.parentElement;
+        }
+        var cells = target.cells; //cells collection
+
+        if (!cells.length || target.parentNode.nodeName == 'THEAD') { // if clicked row is within thead
+            return;
+        }
+        name_value = cells[0].innerHTML;
+        dbRef.orderByChild('name')
+       .equalTo(name_value)
+      .once('value')
+      .then(function (snapshot) {
+
+      snapshot.forEach(function(userSnapshot)
+       {
+         var username = userSnapshot.val();
+         console.log(username.lat);
+         console.log(username.lng);
+         latitudeLongitude[0] = username.lat;
+         latitudeLongitude[1] = username.lng;
+      });
+
+
+var zoomPlace = {lat: latitudeLongitude[0], lng: latitudeLongitude[1]};
+
+      map.setZoom(15);
+      map.panTo(zoomPlace);
+
+    });
+});
+
+      }
+    </script>
+
+
+</body>
+
+</html>
